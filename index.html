@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nav Studio - Evangelism Content Engine</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto+Mono:wght@400&display=swap" rel="stylesheet">
+    
+    <style>
+        html { scroll-behavior: smooth; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #0F172A; /* Slate 900 */
+            background-image: radial-gradient(rgba(56, 189, 248, 0.05) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+        .btn { transition: all 0.2s ease-in-out; }
+        .btn:active:not(:disabled) { transform: scale(0.97); }
+        .btn-primary { background: linear-gradient(135deg, #0EA5E9, #2563EB); color: white; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); }
+        .btn-primary:hover:not(:disabled) { background: linear-gradient(135deg, #38BDF8, #3B82F6); box-shadow: 0 6px 15px rgba(37, 99, 235, 0.4); }
+        .btn-success { background-color: #059669; color: white; }
+        .btn-secondary { background-color: #334155; color: white; }
+        .btn-secondary:hover:not(:disabled) { background-color: #475569; }
+        .btn-ai { background: linear-gradient(135deg, #6366F1, #4F46E5); color: white; }
+        .btn-prompt-canva { background-color: #7d2ae8; color: white; }
+        .btn-prompt-canva:hover:not(:disabled) { background-color: #6a24c6; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        .loader, .inline-loader {
+            border: 3px solid rgba(255,255,255,0.1); border-top: 3px solid #38BDF8;
+            border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite;
+        }
+        .inline-loader { width: 18px; height: 18px; border-width: 2px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        .fade-in { animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .tab-btn { border-bottom: 2px solid transparent; transition: all 0.3s; }
+        .tab-btn.active { border-bottom-color: #38BDF8; color: #38BDF8; font-weight: 700; }
+        
+        .prompt-output { 
+            font-family: 'Roboto Mono', monospace;
+            background-color: #020617; 
+            border: 1px solid #1E293B; 
+            color: #CBD5E1;
+            font-size: 0.85rem;
+            line-height: 1.6;
+        }
+        
+        .glass-card {
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(16px);
+            border-radius: 12px;
+            border: 1px solid rgba(51, 65, 85, 0.5);
+        }
+        
+        .nav-accent { border-left: 4px solid #38BDF8; }
+        
+        .scene-card { transition: transform 0.2s; }
+        .scene-card:hover { transform: translateY(-2px); border-color: #38BDF8; }
+        
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #1E293B; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 10px; }
+    </style>
+</head>
+<body class="text-slate-200 antialiased">
+
+    <div id="app-wrapper">
+        <header class="py-5 px-6 md:px-12 border-b border-slate-800 bg-slate-900/50 sticky top-0 z-40 backdrop-blur-md">
+            <div class="max-w-7xl mx-auto flex justify-between items-center gap-4">
+                <div class="flex items-center gap-4">
+                    <div class="bg-sky-500 p-2 rounded-lg text-white text-xl flex items-center justify-center w-10 h-10 shadow-lg shadow-sky-500/50 shrink-0">
+                        &#10022;
+                    </div>
+                    <div class="hidden sm:block">
+                        <h1 class="text-xl font-black tracking-tighter text-white">NAV <span class="text-sky-400">STUDIO</span></h1>
+                        <p class="text-[10px] text-slate-400 uppercase tracking-widest">Evangelism Content Engine</p>
+                    </div>
+                </div>
+                
+                <div class="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
+                    <button id="importProjectBtn" class="btn btn-secondary py-2 px-3 sm:px-4 rounded-lg text-[10px] sm:text-xs font-bold flex items-center gap-2">
+                        <span>&#128194;</span> <span class="hidden md:inline">IMPOR</span>
+                    </button>
+                    <button id="exportProjectBtn" class="btn btn-secondary py-2 px-3 sm:px-4 rounded-lg text-[10px] sm:text-xs font-bold flex items-center gap-2">
+                        <span>&#128190;</span> <span class="hidden md:inline">EKSPOR</span>
+                    </button>
+                    <button id="resetProjectBtn" class="btn btn-secondary py-2 px-3 sm:px-4 rounded-lg text-[10px] sm:text-xs font-bold flex items-center gap-2 text-red-400 hover:text-red-300">
+                        <span>&#8634;</span> <span class="hidden md:inline">RESET</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <input type="file" id="importFileInput" accept=".json" class="hidden">
+
+        <div class="flex flex-col lg:flex-row max-w-7xl mx-auto gap-8 p-6 lg:p-10">
+            
+            <aside class="w-full lg:w-80 space-y-8 flex-shrink-0">
+                <!-- Pengaturan AI (API Key & Model) -->
+                <div class="glass-card overflow-hidden">
+                    <div class="p-5 border-b border-slate-700 bg-slate-800/30 flex justify-between items-center">
+                        <h2 class="font-bold text-white text-sm uppercase tracking-widest">Pengaturan AI</h2>
+                        <div class="flex items-center gap-2">
+                            <span id="apiStatusText" class="text-[9px] font-bold text-green-400 uppercase tracking-wider">Bawaan</span>
+                            <div id="apiStatusIndicator" class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                        </div>
+                    </div>
+                    <div class="p-5 space-y-4">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-2">API Key Pribadi (Opsional):</label>
+                            <input type="password" id="apiKeyInput" placeholder="Sk-..." class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-xs focus:ring-1 focus:ring-sky-500 outline-none transition-all placeholder:text-slate-600">
+                            <p class="text-[10px] text-slate-400 mt-2 leading-relaxed">Kosongkan untuk pakai sistem AI internal. Isi jika ingin akses model <span class="text-sky-400 font-semibold">Pro</span> <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="text-blue-400 hover:underline">Dapatkan key gratis di sini</a>.</p>                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-2">Versi Model:</label>
+                            <select id="modelSelect" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-xs focus:ring-1 focus:ring-sky-500 outline-none">
+                                <option value="gemini-2.5-flash">Gemini 2.5 Flash (Cepat & Ringan)</option>
+                                <option value="gemini-2.5-pro">Gemini 2.5 Pro (Akurat & Kompleks)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Library Metode -->
+                <div class="glass-card overflow-hidden">
+                    <div class="p-5 border-b border-slate-700 bg-slate-800/30">
+                        <h2 class="font-bold text-white text-sm uppercase tracking-widest">Library Metode</h2>
+                    </div>
+                    <div class="p-5 space-y-3">
+                        <p class="text-[10px] text-slate-400 mb-3">Klik untuk mengaktifkan konteks metode pada presentasi Anda.</p>
+                        <div id="templateCharList" class="space-y-2">
+                            <!-- Templates will be injected here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Parameter Visual -->
+                <div class="glass-card overflow-hidden">
+                    <div class="p-5 border-b border-slate-700 bg-slate-800/30">
+                        <h2 class="font-bold text-white text-sm uppercase tracking-widest">Parameter Visual</h2>
+                    </div>
+                    <div class="p-5 space-y-5">
+                        <div class="p-3 bg-sky-500/10 border border-sky-500/20 rounded-lg">
+                            <p class="text-[10px] font-bold text-sky-400 uppercase mb-1">Target Style</p>
+                            <p class="text-xs text-slate-300">Modern Cinematic Dramatic (Fokus pada narasi yang kuat & emosional).</p>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-2">Latar Atmosfer:</label>
+                            <select id="locationSet" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-xs focus:ring-1 focus:ring-sky-500 outline-none">
+                                <option value="minimalist_studio">Studio Minimalis Modern</option>
+                                <option value="urban_coffee_shop">Percakapan Kedai Kopi (Relational)</option>
+                                <option value="modern_office">Konteks Profesional/Kantor</option>
+                                <option value="biblical_cinematic">Kuno Sinematik (Era Alkitab)</option>
+                                <option value="abstract_heavenly">Abstrak Surgawi/Visi</option>
+                                <option value="mountaintop">Puncak Gunung (Refleksi)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-2">Tone Narasi:</label>
+                            <select id="narratorVoiceSet" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-xs focus:ring-1 focus:ring-sky-500 outline-none">
+                                <option value="pria_wibawa">Pria Matang (Berwibawa & Teduh)</option>
+                                <option value="wanita_empati">Wanita (Penuh Empati & Lembut)</option>
+                                <option value="youth_passionate">Anak Muda (Berapi-api & Relevan)</option>
+                                <option value="conversational">Casual Conversational (Sahabat)</option>
+                            </select>
+                        </div>
+
+                        <div class="mt-4">
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-2">Bahasa Narasi / Konten:</label>
+                            <select id="languageSet" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2.5 text-xs focus:ring-1 focus:ring-sky-500 outline-none">
+                                <option value="Indonesian">Indonesia</option>
+                                <option value="English">English</option>
+                                <option value="Spanish">Spanyol (Español)</option>
+                                <option value="Korean">Korea (한국어)</option>
+                                <option value="Japanese">Jepang (日本語)</option>
+                                <option value="Mandarin">Mandarin (中文)</option>
+                                <option value="Javanese">Jawa</option>
+                                <option value="Sundanese">Sunda</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <main class="flex-grow space-y-4">
+                <div class="mb-4">
+                    <p class="text-sm text-slate-300 leading-relaxed">Gunakan tab <b>Draft Konten</b> untuk menyusun materi pemahaman Alkitab Anda menggunakan AI, lalu beralih ke <b>Storyboard Visual</b> untuk memecah materi tersebut menjadi adegan-adegan siap produksi.</p>
+                </div>
+
+                <div class="glass-card overflow-hidden">
+                    <div class="flex border-b border-slate-700 bg-slate-800/20">
+                        <button id="tabNaskah" class="tab-btn active flex-1 md:flex-none px-8 py-4 text-xs font-bold uppercase tracking-widest">&#9997; Draft Konten</button>
+                        <button id="tabStoryboard" class="tab-btn flex-1 md:flex-none px-8 py-4 text-xs font-bold uppercase tracking-widest">&#127916; Storyboard Visual</button>
+                    </div>
+
+                    <div id="naskahView" class="p-8 space-y-8">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-3 tracking-widest">Topik / Dasar Iman:</label>
+                            <div class="flex gap-3">
+                                <input id="projectTitleInput" type="text" placeholder="Contoh: Jaminan Keselamatan dari Yohanes 5 ayat 24 atau Karakter Kristus" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 text-sm focus:ring-2 focus:ring-sky-500 outline-none transition-all">
+                                <button id="generateScriptBtn" class="btn btn-ai px-6 rounded-xl text-xs font-bold whitespace-nowrap hidden flex items-center gap-2">
+                                    <span>AI DRAFT</span>
+                                    <div id="scriptLoader" class="inline-loader hidden"></div>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="relative">
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-3 tracking-widest">Materi Lengkap / Ayat Dasar:</label>
+                            <textarea id="scenarioInput" rows="12" placeholder="Tempelkan materi pemahaman Alkitab atau outline penginjilan di sini, atau gunakan 'AI DRAFT' untuk membuat materi otomatis. AI Gemini akan membedahnya menjadi alur presentasi visual yang sistematis." class="w-full bg-slate-800 border border-slate-700 rounded-xl p-5 text-sm leading-relaxed focus:ring-2 focus:ring-sky-500 outline-none transition-all resize-y"></textarea>
+                        </div>
+
+                        <div class="flex flex-col sm:flex-row items-center justify-between pt-6 border-t border-slate-700 gap-4">
+                            <div class="flex items-center gap-4">
+                                <span class="text-[10px] font-bold text-slate-500 uppercase">Jumlah Frame:</span>
+                                <input type="number" id="sceneCount" min="1" max="15" value="15" class="w-16 bg-slate-800 border border-slate-700 rounded-lg p-2 text-center text-xs">
+                            </div>
+                            <button id="generateBtn" class="btn btn-primary px-10 py-4 rounded-xl font-black text-sm uppercase tracking-widest w-full sm:w-auto shadow-[0_0_20px_rgba(56,189,248,0.2)]" disabled>GENERASI STORYBOARD</button>
+                        </div>
+                    </div>
+
+                    <div id="storyboardView" class="p-8 hidden space-y-8">
+                        <div id="loader" class="mx-auto loader hidden my-20"></div>
+                        <div id="storyboardOutput" class="space-y-8">
+                            <div id="results-placeholder" class="text-center py-32 opacity-30">
+                                <div class="text-6xl mb-6">&#128193;</div>
+                                <p class="text-xl font-light">Storyboard Belum Tersedia</p>
+                                <p class="text-sm mt-2">Buat materi di tab Draft Konten dan klik Generasi.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <div id="notificationModal" class="fixed bottom-8 right-8 bg-sky-600 text-white py-4 px-6 rounded-xl shadow-2xl hidden fade-in z-50 flex items-center gap-3">
+        <span>&#10003;</span>
+        <p id="notificationText" class="text-sm font-bold"></p>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- STATE & CONFIG ---
+        let characters = []; // Active method library selections
+        let storyboardData = [];
+        
+        const VISUAL_STYLE_GUIDE = {
+            style: "Modern Cinematic Dramatic style, professional photography aesthetic, deep shadows, high contrast, minimalist compositions, impactful atmosphere, emotional depth, 8K resolution",
+            negative: "cartoon, anime, disney, pixar, illustration, bright colors, childish, sketch, poor quality, text, watermark, blurry"
+        };
+
+        const templateCharacters = [
+            {
+                name: "The Bridge (Jembatan)", brandName: "The Bridge",
+                description: "Simbol jembatan keselamatan antara manusia dan Tuhan melalui Salib."
+            },
+            {
+                name: "The Wheel (Roda)", brandName: "The Wheel",
+                description: "Ilustrasi pemuridan (Kristus sebagai pusat, ketaatan sebagai ruji)."
+            },
+            {
+                name: "The Word Hand", brandName: "Word Hand",
+                description: "Konsep 5 jari dalam menguasai Firman Tuhan (Mendengar, Membaca, dll)."
+            }
+        ];
+
+        // --- API & SETTINGS LOGIC ---
+        const apiKeyInput = document.getElementById('apiKeyInput');
+        const modelSelect = document.getElementById('modelSelect');
+        const apiStatusIndicator = document.getElementById('apiStatusIndicator');
+        const apiStatusText = document.getElementById('apiStatusText');
+
+        // Load saved settings
+        apiKeyInput.value = localStorage.getItem('navStudioApiKey') || '';
+        modelSelect.value = localStorage.getItem('navStudioModel') || 'gemini-2.5-flash';
+
+        const updateApiStatus = () => {
+            if (apiKeyInput.value.trim().length > 0) {
+                apiStatusIndicator.classList.replace('bg-green-500', 'bg-sky-500');
+                apiStatusText.textContent = "Kustom";
+                apiStatusText.classList.replace('text-green-400', 'text-sky-400');
+                localStorage.setItem('navStudioApiKey', apiKeyInput.value.trim());
+            } else {
+                apiStatusIndicator.classList.replace('bg-sky-500', 'bg-green-500');
+                apiStatusText.textContent = "Bawaan";
+                apiStatusText.classList.replace('text-sky-400', 'text-green-400');
+                localStorage.removeItem('navStudioApiKey');
+            }
+        };
+
+        apiKeyInput.addEventListener('input', updateApiStatus);
+        modelSelect.addEventListener('change', (e) => {
+            localStorage.setItem('navStudioModel', e.target.value);
+        });
+        
+        updateApiStatus(); // Initial setup
+
+        // --- GEMINI API INTEGRATION ---
+        const callGeminiAPI = async (prompt, schema = null) => {
+            const customApiKey = apiKeyInput.value.trim();
+            const selectedModel = modelSelect.value;
+            
+            // Default to internal Canvas settings if no custom key is provided
+            const apiKey = customApiKey || ""; 
+            const modelEndpoint = customApiKey ? selectedModel : "gemini-2.5-flash-preview-09-2025";
+            
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelEndpoint}:generateContent?key=${apiKey}`;
+            
+            const payload = { 
+                contents: [{ role: "user", parts: [{ text: prompt }] }] 
+            };
+            
+            if (schema) {
+                payload.generationConfig = { 
+                    responseMimeType: "application/json", 
+                    responseSchema: schema 
+                };
+            }
+
+            const delays = [1000, 2000, 4000, 8000, 16000];
+            for (let i = 0; i < delays.length; i++) {
+                try {
+                    const response = await fetch(apiUrl, { 
+                        method: 'POST', 
+                        headers: { 'Content-Type': 'application/json' }, 
+                        body: JSON.stringify(payload) 
+                    });
+                    
+                    if (!response.ok) {
+                        const errDetails = await response.text();
+                        console.error("API Error Details:", errDetails);
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    const result = await response.json();
+                    if(result.candidates && result.candidates[0].content && result.candidates[0].content.parts) {
+                         return result.candidates[0].content.parts[0].text;
+                    } else {
+                         throw new Error("Invalid API Response structure");
+                    }
+                    
+                } catch (e) {
+                    if (i === delays.length - 1) {
+                        showNotification("Gagal terhubung ke AI Gemini. Cek API Key atau koneksi Anda.");
+                        throw e;
+                    }
+                    await new Promise(res => setTimeout(res, delays[i]));
+                }
+            }
+        };
+
+        // --- UI RENDER LOGIC ---
+        const renderCharacters = () => {
+            const container = document.getElementById('templateCharList');
+            container.innerHTML = '';
+            templateCharacters.forEach((char) => {
+                const isSelected = characters.includes(char.brandName);
+                const bgClass = isSelected ? 'bg-sky-900/40 border-sky-500' : 'bg-slate-800/50 border-slate-700';
+                const checkColor = isSelected ? 'text-sky-400 opacity-100' : 'text-slate-500 opacity-50';
+                
+                const btn = document.createElement('div');
+                btn.className = `w-full text-left p-3 rounded-lg border transition-all flex justify-between items-center cursor-pointer hover:bg-slate-700/50 ${bgClass}`;
+                btn.innerHTML = `
+                    <div>
+                        <p class="text-[10px] font-bold ${isSelected ? 'text-sky-300' : 'text-sky-400'} uppercase">${char.brandName}</p>
+                        <p class="text-[11px] text-slate-400 mt-1">${char.description}</p>
+                    </div>
+                    <span class="${checkColor} font-bold">&#10003;</span>
+                `;
+                btn.onclick = () => {
+                    if (isSelected) {
+                        characters = characters.filter(c => c !== char.brandName);
+                    } else {
+                        characters.push(char.brandName);
+                        showNotification(`${char.brandName} diaktifkan.`);
+                    }
+                    renderCharacters(); 
+                };
+                container.appendChild(btn);
+            });
+        };
+
+        const renderScenePrompt = (promptText, container, title) => {
+            const promptId = `prompt-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+            container.innerHTML = `
+                <div class="mt-2 bg-slate-900/80 border border-slate-700 rounded-lg p-1 fade-in">
+                    <div class="flex justify-between items-center px-3 py-2 border-b border-slate-700/50">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase">${title}</span>
+                        <button class="btn btn-secondary text-[10px] font-bold py-1 px-3 rounded copy-btn" data-copy-target-id="${promptId}">Salin</button>
+                    </div>
+                    <pre id="${promptId}" class="prompt-output p-3 text-slate-300 whitespace-pre-wrap">${promptText}</pre>
+                </div>`;
+            
+            const copyBtn = container.querySelector('.copy-btn');
+            copyBtn.addEventListener('click', () => {
+                const targetId = copyBtn.dataset.copyTargetId;
+                const text = document.getElementById(targetId).innerText;
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    const originalText = copyBtn.innerText;
+                    copyBtn.innerText = "Tersalin!";
+                    copyBtn.classList.replace('btn-secondary', 'btn-success');
+                    setTimeout(() => { 
+                        copyBtn.innerText = originalText;
+                        copyBtn.classList.replace('btn-success', 'btn-secondary');
+                    }, 2000);
+                } catch (err) {
+                    showNotification("Gagal menyalin teks.");
+                }
+                document.body.removeChild(textArea);
+            });
+        };
+
+        const handleGenerateStoryboard = async () => {
+            const scenario = document.getElementById('scenarioInput').value;
+            const count = document.getElementById('sceneCount').value;
+            if (!scenario) return;
+
+            document.getElementById('tabStoryboard').click();
+            document.getElementById('loader').classList.remove('hidden');
+            document.getElementById('results-placeholder').classList.add('hidden');
+            document.getElementById('storyboardOutput').innerHTML = '';
+            
+            const location = document.getElementById('locationSet').value;
+            const voice = document.getElementById('narratorVoiceSet').value;
+            const language = document.getElementById('languageSet').value;
+
+            let selectedMethodsContext = "";
+            if (characters.length > 0) {
+                const selectedDetails = templateCharacters.filter(tc => characters.includes(tc.brandName)).map(tc => tc.description).join(" | ");
+                selectedMethodsContext = `\n- Visual Themes/Symbols to integrate: ${selectedDetails}`;
+            }
+
+            const prompt = `You are a Visual Ministry Strategist and Instructional Designer. Convert the following Biblical/Evangelism content into a ${count}-frame cinematic storyboard.
+            
+            CONTENT: "${scenario}"
+            
+            VISUAL GUIDELINES:
+            - Target Style: ${VISUAL_STYLE_GUIDE.style}
+            - Location/Atmosphere context: ${location.replace('_', ' ')}
+            - Narrator Tone context: ${voice.replace('_', ' ')}${selectedMethodsContext}
+            - Narration Language: MUST BE WRITTEN IN ${language.toUpperCase()}
+
+            MANDATORY NARRATION RULES (FOR EVERY SCENE):
+            1. Max 1-2 sentences per scene.
+            2. Strict limit: Maximum 20 words per scene (approx. 9 seconds duration).
+            3. Tone: Concise, direct, and emotionally resonant.
+            4. Cohesion: Narration MUST correlate directly with the Visual Action described.
+
+            MANDATORY FINAL SCENE (CTA) RULES:
+            1. Visual Function: Focus on On-Screen Text (OST), pointing towards the camera or interaction buttons.
+            2. Audio/VO Function: Clear, direct instructions for the audience.
+            3. Formula: [Short Call to Action] + [Reason/Benefit (Optional)].
+            4. Example: "Ketik 'Amin' jika kamu siap melepaskan kendali dan percaya pada waktu-Nya hari ini."
+
+            REQUIREMENTS:
+            - Ensure deep theological meaning combined with modern presentation.
+            - Output strictly as JSON array 'storyboard'.
+            - Each scene must include 'scene_number', 'scene_title', 'scene_summary' (detailed visual action), 'biblical_insight' (theological reflection), 'cinematography' (shot_type, camera_angle, camera_movement), and 'sound_design' (sfx array, ambience, narration_script, audio_mixing_guide).
+            - Audio Mixing Guide should be in English (e.g., "Duck ambience under VO").`;
+
+            const schema = {
+                type: "OBJECT", 
+                properties: {
+                    storyboard: { 
+                        type: "ARRAY", 
+                        items: {
+                            type: "OBJECT", 
+                            properties: {
+                                scene_number: { type: "NUMBER" },
+                                scene_title: { type: "STRING" },
+                                scene_summary: { type: "STRING" },
+                                biblical_insight: { type: "STRING" },
+                                cinematography: { 
+                                    type: "OBJECT", 
+                                    properties: { shot_type: { type: "STRING" }, camera_angle: { type: "STRING" }, camera_movement: { type: "STRING" } } 
+                                },
+                                sound_design: { 
+                                    type: "OBJECT", 
+                                    properties: { sfx: { type: "ARRAY", items: { type: "STRING" } }, ambience: { type: "STRING" }, narration_script: { type: "STRING" }, audio_mixing_guide: { type: "STRING" } } 
+                                }
+                            }, required: ["scene_number", "scene_title", "scene_summary", "biblical_insight", "cinematography", "sound_design"]
+                        }
+                    }
+                }
+            };
+
+            try {
+                const result = await callGeminiAPI(prompt, schema);
+                storyboardData = JSON.parse(result).storyboard;
+                renderStoryboard();
+                showNotification("Storyboard beresolusi tinggi berhasil dibuat!");
+            } catch (e) {
+                console.error(e);
+                document.getElementById('results-placeholder').classList.remove('hidden');
+                document.getElementById('results-placeholder').innerHTML = `<p class="text-red-400">Terjadi kesalahan saat membuat storyboard: ${e.message}</p>`;
+            } finally {
+                document.getElementById('loader').classList.add('hidden');
+            }
+        };
+
+        const renderStoryboard = () => {
+            const container = document.getElementById('storyboardOutput');
+            container.innerHTML = '';
+            
+            if (!storyboardData || storyboardData.length === 0) {
+                 container.innerHTML = `
+                    <div id="results-placeholder" class="text-center py-32 opacity-30">
+                        <div class="text-6xl mb-6">&#128193;</div>
+                        <p class="text-xl font-light">Storyboard Belum Tersedia</p>
+                        <p class="text-sm mt-2">Buat materi di tab Draft Konten dan klik Buat STORYBOARD.</p>
+                    </div>
+                 `;
+                 return;
+            }
+
+            storyboardData.forEach((scene, i) => {
+                const el = document.createElement('div');
+                el.className = "scene-card glass-card p-6 nav-accent fade-in";
+                
+                const narrationHtml = (scene.sound_design?.narration_script) 
+                    ? `<div class="mt-4 pt-4 border-t border-slate-700/50"><p class="text-sm text-slate-300 italic"><strong>Narasi VO:</strong> "${scene.sound_design.narration_script}"</p></div>` : '';
+                
+                const sfxList = scene.sound_design?.sfx?.length > 0
+                    ? `<ul class="text-xs mt-2 space-y-1">${scene.sound_design.sfx.map(sfx => `<li class="flex items-center gap-1"><span class="text-sky-400">&#9834;</span> ${sfx}</li>`).join('')}</ul>` : '<p class="text-xs text-slate-500 mt-1 italic">Tidak ada SFX.</p>';
+                
+                const mixingGuide = scene.sound_design?.audio_mixing_guide
+                    ? `<div class="mt-4 bg-slate-900/50 p-3 rounded-lg border border-slate-700/50"><h5 class="font-bold text-sky-400 text-xs uppercase mb-1">Panduan Mixing Audio</h5><p class="text-xs text-slate-400 italic">${scene.sound_design.audio_mixing_guide}</p></div>` : '';
+
+                el.innerHTML = `
+                    <div class="flex flex-col md:flex-row items-start gap-6">
+                        <div class="bg-slate-900 text-sky-400 border border-slate-700 font-bold rounded-lg w-16 h-16 flex flex-col items-center justify-center text-center flex-shrink-0 shadow-inner">
+                            <span class="text-[10px] uppercase tracking-wider">Scene</span><span class="text-2xl">${scene.scene_number || (i + 1)}</span>
+                        </div>
+                        <div class="w-full">
+                            <h4 class="text-lg font-bold text-white mb-2 uppercase tracking-wide">${scene.scene_title}</h4>
+                            <p class="text-slate-300 text-sm leading-relaxed border-l-2 border-slate-600 pl-3"><strong>Visual:</strong> ${scene.scene_summary || scene.visual_description}</p>
+                            
+                            <div class="mt-3 bg-slate-900/50 p-3 rounded-lg border border-slate-700/80">
+                                <p class="text-[10px] font-bold text-sky-400 uppercase mb-1 flex items-center gap-1"><span>&#10022;</span> Refleksi Biblika / Konsep:</p>
+                                <p class="text-xs text-slate-300">${scene.biblical_insight}</p>
+                            </div>
+                            
+                            <div class="mt-4 pt-4 border-t border-slate-700/50 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="bg-slate-800/80 p-3 rounded-lg">
+                                    <h5 class="font-bold text-sky-400 text-[10px] uppercase mb-1">Sinematografi & Kamera</h5>
+                                    <p class="text-xs text-slate-300"><strong>Shot:</strong> ${scene.cinematography?.shot_type || 'N/A'}</p>
+                                    <p class="text-xs text-slate-300"><strong>Angle:</strong> ${scene.cinematography?.camera_angle || 'N/A'}</p>
+                                    <p class="text-xs text-slate-300"><strong>Move:</strong> ${scene.cinematography?.camera_movement || 'N/A'}</p>
+                                </div>
+                                <div class="bg-slate-800/80 p-3 rounded-lg">
+                                    <h5 class="font-bold text-green-400 text-[10px] uppercase mb-1">Efek Suara (SFX) & Ambience</h5>
+                                    <p class="text-xs text-slate-300 mb-1"><strong>Ambience:</strong> ${scene.sound_design?.ambience || 'N/A'}</p>
+                                    ${sfxList}
+                                </div>
+                            </div>
+                            ${mixingGuide} ${narrationHtml}
+                        </div>
+                    </div>
+                    <div class="mt-6 pt-4 border-t border-slate-700 flex flex-col gap-4">
+                        <div class="flex flex-wrap gap-2">
+                            <button class="generate-blueprint-btn btn btn-secondary text-[10px] font-bold py-2 px-4 rounded-lg flex items-center gap-2"><span>PROMPT DETAIL (SORA/VEO)</span></button>
+                            <button class="generate-canva-prompt-btn btn btn-prompt-canva text-[10px] font-bold py-2 px-4 rounded-lg flex items-center gap-2"><span>PROMPT CANVA AI</span></button>
+                            <button class="generate-timecode-btn btn btn-success text-[10px] font-bold py-2 px-4 rounded-lg flex items-center gap-2"><span>JSON TIMECODE</span></button>
+                            <button class="copy-narration-btn btn btn-secondary text-[10px] font-bold py-2 px-4 rounded-lg flex items-center gap-2 hover:bg-slate-600"><span>&#128203; SALIN NARASI</span></button>
+                        </div>
+                        <div class="prompt-results-grid grid grid-cols-1 gap-4">
+                            <div class="blueprint-prompt-container"></div>
+                            <div class="canva-prompt-container"></div>
+                            <div class="timecode-script-container"></div>
+                        </div>
+                    </div>
+                `;
+                
+                const generateBlueprintBtn = el.querySelector('.generate-blueprint-btn');
+                const generateCanvaBtn = el.querySelector('.generate-canva-prompt-btn');
+                const generateTimecodeBtn = el.querySelector('.generate-timecode-btn');
+                const copyBtn = el.querySelector('.copy-narration-btn');
+                
+                const blueprintContainer = el.querySelector('.blueprint-prompt-container');
+                const canvaContainer = el.querySelector('.canva-prompt-container');
+                const timecodeContainer = el.querySelector('.timecode-script-container');
+
+                copyBtn.addEventListener('click', () => {
+                    const text = scene.sound_design?.narration_script || "Tidak ada narasi yang dihasilkan.";
+                    const textArea = document.createElement('textarea');
+                    textArea.value = text;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    try {
+                        document.execCommand('copy');
+                        showNotification("Narasi Voice-over disalin ke clipboard!");
+                    } catch (err) {
+                        showNotification("Gagal menyalin teks.");
+                    }
+                    document.body.removeChild(textArea);
+                });
+
+                generateBlueprintBtn.addEventListener('click', async () => {
+                    generateBlueprintBtn.disabled = true;
+                    const span = generateBlueprintBtn.querySelector('span');
+                    const origText = span.textContent;
+                    span.innerHTML = '<div class="inline-loader"></div> Memproses...';
+                    
+                    let selectedMethodsContext = characters.length > 0 ? `\nMaintain element consistency: ${characters.join(', ')}.` : '';
+
+                    const prompt = `You are a world-class prompt engineer for advanced text-to-video AI models. Generate a detailed, structured video prompt in English.
+                    ${selectedMethodsContext}
+                    Scene Data: \`\`\`json\n${JSON.stringify(scene, null, 2)}\n\`\`\`
+                    
+                    Generate a structured prompt:
+                    STYLE: [Based on keywords: ${VISUAL_STYLE_GUIDE.style}. Add quality descriptors like 8K, cinematic.]
+                    SUBJECT: [Describe main subject, characters, actions from 'scene_summary'. Be specific.]
+                    ENVIRONMENT: [Describe setting from scene and context.]
+                    COMPOSITION: [Detail shot composition, angle, movement from 'cinematography'.]
+                    LIGHTING: [Describe lighting, mood, atmosphere.]
+                    NEGATIVE_PROMPT: [${VISUAL_STYLE_GUIDE.negative}]
+                    NARRATION: [${scene.sound_design?.narration_script || "None"}]
+                    MIXING: [${scene.sound_design?.audio_mixing_guide || "None"}]`;
+
+                    try {
+                        const result = await callGeminiAPI(prompt);
+                        renderScenePrompt(result, blueprintContainer, 'Detail Video AI Prompt (Sora/Veo)');
+                    } catch (e) {
+                        renderScenePrompt(`Error: ${e.message}`, blueprintContainer, 'Error');
+                    } finally {
+                        span.textContent = origText;
+                        generateBlueprintBtn.disabled = false;
+                    }
+                });
+
+                generateCanvaBtn.addEventListener('click', async () => {
+                    generateCanvaBtn.disabled = true;
+                    const span = generateCanvaBtn.querySelector('span');
+                    const origText = span.textContent;
+                    span.innerHTML = '<div class="inline-loader"></div> Memproses...';
+                    
+                    const prompt = `Anda adalah ahli Canva Magic Media. Buat prompt gambar/video sangat singkat (maks 25 kata) dalam Bahasa Indonesia.
+                    Adegan: "${scene.scene_summary || scene.visual_description}"
+                    Aturan: Sertakan subjek utama, aksi, dan akhiri dengan gaya visual "Modern Cinematic Dramatic, kualitas tinggi". Jangan gunakan tanda kutip di hasil akhir.`;
+
+                    try {
+                        const result = await callGeminiAPI(prompt);
+                        renderScenePrompt(result, canvaContainer, 'Canva Magic Media Prompt');
+                    } catch (e) {
+                        renderScenePrompt(`Error: ${e.message}`, canvaContainer, 'Error');
+                    } finally {
+                        span.textContent = origText;
+                        generateCanvaBtn.disabled = false;
+                    }
+                });
+
+                generateTimecodeBtn.addEventListener('click', async () => {
+                    generateTimecodeBtn.disabled = true;
+                    const span = generateTimecodeBtn.querySelector('span');
+                    const origText = span.textContent;
+                    span.innerHTML = '<div class="inline-loader"></div> Memproses...';
+
+                    const prompt = `Create a JSON timecode script for an 8-second video segment based on this scene.
+                    Scene: ${JSON.stringify(scene)}
+                    Return JSON exactly matching this structure:
+                    { "total_duration_seconds": 8, "timeline": [ { "timestamp": "00:00-00:04", "visual_description": "...", "camera_instruction": "...", "sfx": "...", "narration": "..." } ] }`;
+
+                    const schema = {
+                        type: "OBJECT", properties: {
+                            total_duration_seconds: { type: "NUMBER" },
+                            timeline: { type: "ARRAY", items: { type: "OBJECT", properties: { timestamp: { type: "STRING" }, visual_description: { type: "STRING" }, camera_instruction: { type: "STRING" }, sfx: { type: "STRING" }, narration: { type: "STRING" }}}}
+                        }, required: ["total_duration_seconds", "timeline"]
+                    };
+
+                    try {
+                        const result = await callGeminiAPI(prompt, schema);
+                        renderScenePrompt(JSON.stringify(JSON.parse(result), null, 2), timecodeContainer, 'JSON Timecode Timeline');
+                    } catch (e) {
+                        renderScenePrompt(`Error: ${e.message}`, timecodeContainer, 'Error');
+                    } finally {
+                        span.textContent = origText;
+                        generateTimecodeBtn.disabled = false;
+                    }
+                });
+
+                container.appendChild(el);
+            });
+        };
+
+        const showNotification = (text) => {
+            const n = document.getElementById('notificationModal');
+            document.getElementById('notificationText').textContent = text;
+            n.classList.remove('hidden');
+            setTimeout(() => n.classList.add('hidden'), 3000);
+        };
+
+        // --- EVENT LISTENERS ---
+        renderCharacters();
+        
+        // Export Project (Does NOT export API Key)
+        document.getElementById('exportProjectBtn').addEventListener('click', () => {
+            const projectData = {
+                title: document.getElementById('projectTitleInput').value,
+                scenario: document.getElementById('scenarioInput').value,
+                location: document.getElementById('locationSet').value,
+                voice: document.getElementById('narratorVoiceSet').value,
+                language: document.getElementById('languageSet').value,
+                sceneCount: document.getElementById('sceneCount').value,
+                characters: characters, // Export selected methods
+                storyboardData: storyboardData
+            };
+            
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(projectData, null, 2));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            const fileName = (projectData.title || "Draft_Navigator").replace(/\s+/g, '_') + ".json";
+            downloadAnchorNode.setAttribute("download", fileName);
+            document.body.appendChild(downloadAnchorNode);
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+            
+            showNotification("File proyek berhasil diekspor!");
+        });
+
+        // Import Project
+        document.getElementById('importProjectBtn').addEventListener('click', () => {
+            document.getElementById('importFileInput').click();
+        });
+
+        document.getElementById('importFileInput').addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const projectData = JSON.parse(e.target.result);
+                    
+                    if(projectData.title !== undefined) document.getElementById('projectTitleInput').value = projectData.title;
+                    if(projectData.scenario !== undefined) document.getElementById('scenarioInput').value = projectData.scenario;
+                    if(projectData.location !== undefined) document.getElementById('locationSet').value = projectData.location;
+                    if(projectData.voice !== undefined) document.getElementById('narratorVoiceSet').value = projectData.voice;
+                    if(projectData.language !== undefined) document.getElementById('languageSet').value = projectData.language;
+                    if(projectData.sceneCount !== undefined) document.getElementById('sceneCount').value = projectData.sceneCount;
+                    if(projectData.characters !== undefined) {
+                        characters = projectData.characters;
+                        renderCharacters(); // Update UI checked states
+                    }
+                    
+                    if(projectData.storyboardData) {
+                        storyboardData = projectData.storyboardData;
+                        renderStoryboard();
+                        
+                        if(storyboardData.length > 0) {
+                             document.getElementById('tabStoryboard').click();
+                        } else {
+                             document.getElementById('tabNaskah').click();
+                        }
+                    }
+
+                    document.getElementById('generateBtn').disabled = document.getElementById('scenarioInput').value.trim().length === 0;
+                    document.getElementById('generateScriptBtn').classList.toggle('hidden', document.getElementById('projectTitleInput').value.trim().length === 0);
+
+                    showNotification("Proyek berhasil dimuat!");
+                } catch (err) {
+                    showNotification("Gagal memuat file proyek.");
+                    console.error("Parse Error:", err);
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = ''; 
+        });
+        
+        document.getElementById('generateBtn').addEventListener('click', handleGenerateStoryboard);
+        
+        document.getElementById('scenarioInput').addEventListener('input', (e) => {
+            document.getElementById('generateBtn').disabled = e.target.value.trim().length === 0;
+        });
+
+        document.getElementById('tabNaskah').onclick = () => {
+            document.getElementById('tabNaskah').classList.add('active');
+            document.getElementById('tabStoryboard').classList.remove('active');
+            document.getElementById('naskahView').classList.remove('hidden');
+            document.getElementById('storyboardView').classList.add('hidden');
+        };
+        
+        document.getElementById('tabStoryboard').onclick = () => {
+            document.getElementById('tabStoryboard').classList.add('active');
+            document.getElementById('tabNaskah').classList.remove('active');
+            document.getElementById('storyboardView').classList.remove('hidden');
+            document.getElementById('naskahView').classList.add('hidden');
+        };
+
+        document.getElementById('projectTitleInput').addEventListener('input', (e) => {
+            document.getElementById('generateScriptBtn').classList.toggle('hidden', e.target.value.trim().length === 0);
+        });
+
+        document.getElementById('generateScriptBtn').onclick = async () => {
+            const title = document.getElementById('projectTitleInput').value;
+            const btnLoader = document.getElementById('scriptLoader');
+            const btnText = document.querySelector('#generateScriptBtn span');
+            const language = document.getElementById('languageSet').value;
+            
+            btnLoader.classList.remove('hidden');
+            btnText.textContent = "MEMPROSES...";
+            document.getElementById('generateScriptBtn').disabled = true;
+            
+            const prompt = `Write a deep, impactful evangelism or bible study outline about "${title}". 
+            Structure it logically into clear points. Include 2-3 key Bible verses. 
+            Language for the outline and content: MUST BE IN ${language.toUpperCase()}. Make the tone inspiring, accessible, and applicable for a modern audience.
+            Do not include formatting like markdown bold/italics, just plain structured text with clear paragraph breaks.`;
+            
+            try {
+                const result = await callGeminiAPI(prompt);
+                document.getElementById('scenarioInput').value = result;
+                document.getElementById('generateBtn').disabled = false;
+                showNotification("Draft konten berhasil dibuat AI!");
+            } catch (e) {
+                showNotification("Gagal membuat draft. Silakan coba lagi.");
+            } finally {
+                btnLoader.classList.add('hidden');
+                btnText.textContent = "AI DRAFT";
+                document.getElementById('generateScriptBtn').disabled = false;
+            }
+        };
+
+        document.getElementById('resetProjectBtn').onclick = () => {
+            if(confirm("Anda yakin ingin mereset seluruh halaman ini? Draft belum tersimpan akan hilang.")) {
+                document.getElementById('scenarioInput').value = '';
+                document.getElementById('projectTitleInput').value = '';
+                document.getElementById('generateBtn').disabled = true;
+                storyboardData = [];
+                characters = [];
+                renderCharacters(); // Reset checkmarks
+                document.getElementById('storyboardOutput').innerHTML = `
+                    <div id="results-placeholder" class="text-center py-32 opacity-30">
+                        <div class="text-6xl mb-6">&#128193;</div>
+                        <p class="text-xl font-light">Storyboard Belum Tersedia</p>
+                        <p class="text-sm mt-2">Buat materi di tab Draft Konten dan klik Generasi.</p>
+                    </div>
+                `;
+                document.getElementById('tabNaskah').click();
+                showNotification("Ruang kerja telah direset.");
+            }
+        };
+    });
+    </script>
+</body>
+</html>
