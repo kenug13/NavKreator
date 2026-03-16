@@ -205,9 +205,9 @@
                         <div>
                             <label class="block text-[10px] font-bold text-slate-500 uppercase mb-3 tracking-widest">Topik / Dasar Iman:</label>
                             <div class="flex gap-3">
-                                <input id="projectTitleInput" type="text" placeholder="Contoh: Jaminan Keselamatan dari Yohanes 5 ayat 24 atau Karakter Kristus" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 text-sm focus:ring-2 focus:ring-sky-500 outline-none transition-all">
+                                <input id="projectTitleInput" type="text" placeholder="Contoh: Konsep Jaminan Keselamatan dari Yohanes 3 ayat 16 atau Karakter Kristus" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 text-sm focus:ring-2 focus:ring-sky-500 outline-none transition-all">
                                 <button id="generateScriptBtn" class="btn btn-ai px-6 rounded-xl text-xs font-bold whitespace-nowrap hidden flex items-center gap-2">
-                                    <span>AI DRAFT</span>
+                                    <span>Buat Materi</span>
                                     <div id="scriptLoader" class="inline-loader hidden"></div>
                                 </button>
                             </div>
@@ -215,15 +215,15 @@
 
                         <div class="relative">
                             <label class="block text-[10px] font-bold text-slate-500 uppercase mb-3 tracking-widest">Materi Lengkap / Ayat Dasar:</label>
-                            <textarea id="scenarioInput" rows="12" placeholder="Tempelkan materi pemahaman Alkitab atau outline penginjilan di sini, atau gunakan 'AI DRAFT' untuk membuat materi otomatis. AI Gemini akan membedahnya menjadi alur presentasi visual yang sistematis." class="w-full bg-slate-800 border border-slate-700 rounded-xl p-5 text-sm leading-relaxed focus:ring-2 focus:ring-sky-500 outline-none transition-all resize-y"></textarea>
+                            <textarea id="scenarioInput" rows="12" placeholder="Tempelkan materi pemahaman Alkitab atau outline penginjilan di sini, atau gunakan 'BUAT MATERI' untuk membuat materi otomatis. AI Gemini akan membedahnya menjadi alur presentasi visual yang sistematis." class="w-full bg-slate-800 border border-slate-700 rounded-xl p-5 text-sm leading-relaxed focus:ring-2 focus:ring-sky-500 outline-none transition-all resize-y"></textarea>
                         </div>
 
                         <div class="flex flex-col sm:flex-row items-center justify-between pt-6 border-t border-slate-700 gap-4">
                             <div class="flex items-center gap-4">
                                 <span class="text-[10px] font-bold text-slate-500 uppercase">Jumlah Frame:</span>
-                                <input type="number" id="sceneCount" min="1" max="15" value="15" class="w-16 bg-slate-800 border border-slate-700 rounded-lg p-2 text-center text-xs">
+                                <input type="number" id="sceneCount" min="1" max="50" value="25" class="w-16 bg-slate-800 border border-slate-700 rounded-lg p-2 text-center text-xs">
                             </div>
-                            <button id="generateBtn" class="btn btn-primary px-10 py-4 rounded-xl font-black text-sm uppercase tracking-widest w-full sm:w-auto shadow-[0_0_20px_rgba(56,189,248,0.2)]" disabled>GENERASI STORYBOARD</button>
+                            <button id="generateBtn" class="btn btn-primary px-10 py-4 rounded-xl font-black text-sm uppercase tracking-widest w-full sm:w-auto shadow-[0_0_20px_rgba(56,189,248,0.2)]" disabled>BUAT STORYBOARD</button>
                         </div>
                     </div>
 
